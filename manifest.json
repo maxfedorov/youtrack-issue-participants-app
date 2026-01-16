@@ -1,0 +1,23 @@
+{
+  "name": "issue-participants",
+  "title": "Issue Participants",
+  "description": "Issue Participants",
+  "$schema": "https://json.schemastore.org/youtrack-app.json",
+  "vendor": {
+    "name": "Maksim Fedorov",
+    "url": "https://github.com/maxfedorov"
+  },
+  "icon": "icon.svg",
+  "widgets": [
+
+    {
+      "key": "issue-participants",
+      "name": "Issue-Participants",
+      "indexPath": "issue-participants/index.html",
+      "extensionPoint": "ISSUE_FIELD_PANEL_LAST",
+      "iconPath": "issue-participants/widget-icon.svg",
+      "description": "Issue Participants",
+      "permissions": []
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+.widget {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ring-unit);
+  padding: calc(var(--ring-unit) / 2);
+}
+
+.participant {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ring-unit);
+  min-width: 0;
+  padding: calc(var(--ring-unit) / 2) 0;
+}
+
+.participantInfo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  line-height: 1.2;
+}
+
+.participantNameRow {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.participantName {
+  font-size: var(--ring-font-size);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ring-link-color);
+}
+
+.participantRoles {
+  font-size: var(--ring-font-size-smaller);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ring-secondary-color);
+}
