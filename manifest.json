@@ -1,7 +1,7 @@
 {
   "name": "issue-participants",
   "title": "Issue Participants",
-  "description": "Issue Participants",
+  "description": "Displays a list of all issue participants, identifying their roles based on current state and activity.",
   "$schema": "https://json.schemastore.org/youtrack-app.json",
   "vendor": {
     "name": "Maksim Fedorov",
@@ -15,7 +15,7 @@
       "indexPath": "issue-participants/index.html",
       "extensionPoint": "ISSUE_FIELD_PANEL_LAST",
       "iconPath": "issue-participants/widget-icon.svg",
-      "description": "Issue Participants",
+      "description": "View all participants and their roles based on current state and activity.",
       "permissions": ["READ_USER", "READ_ISSUE"]
     }
   ]
