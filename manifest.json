@@ -12,7 +12,7 @@
 
     {
       "key": "issue-participants",
-      "name": "Issue-Participants",
+      "name": "Issue Participants",
       "indexPath": "issue-participants/index.html",
       "extensionPoint": "ISSUE_FIELD_PANEL_LAST",
       "iconPath": "issue-participants/widget-icon.svg",
