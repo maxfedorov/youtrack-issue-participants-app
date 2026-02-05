@@ -32,8 +32,14 @@ export const collectParticipants = (issue: Issue, activities: ActivityItem[]): P
 
   // 1. Reporter
   if (issue.reporter) {
-    const p = getOrCreateParticipant(issue.reporter, 0);
+    const p = getOrCreateParticipant(issue.reporter, issue.created || 0);
     p.roles.add('reporter');
+  }
+
+  // 1.1 Updater
+  if (issue.updater) {
+    const p = getOrCreateParticipant(issue.updater, issue.updated || 0);
+    p.roles.add('last updater');
   }
 
   // 2. Fields
@@ -57,6 +63,45 @@ export const collectParticipants = (issue: Issue, activities: ActivityItem[]): P
     }
   });
 
+  const COMMENT_CATEGORIES = [
+    'CommentsCategory', 'ArticleCommentsCategory', 'CommentAttachmentsCategory',
+    'CommentTextCategory', 'CommentReactionCategory', 'CommentTemporarilyDeletedCategory',
+    'CommentVisibilityCategory', 'CommentMentionCategory'
+  ];
+
+  const ATTACHMENT_CATEGORIES = [
+    'AttachmentsCategory', 'AttachmentRenameCategory', 'AttachmentVisibilityCategory',
+    'AttachmentRecognizedTextCategory'
+  ];
+
+  const WORK_ITEM_CATEGORIES = [
+    'WorkItemCategory', 'WorkItemTypeCategory', 'WorkItemDescriptionCategory',
+    'WorkItemDurationCategory', 'WorkItemDateCategory', 'WorkItemAuthorCategory'
+  ];
+
+  const VCS_CATEGORIES = [
+    'VcsChangeCategory', 'VcsChangeStateCategory', 'PullRequestChangeCategory', 'UpsourceReviewCategory'
+  ];
+
+  const EDITOR_CATEGORIES = [
+    'CustomFieldCategory', 'TagsCategory',
+    'LinksCategory', 'ProjectCategory', 'SprintCategory', 'IssueVisibilityCategory',
+    'IssueResolvedCategory', 'IssueRestoredCategory', 'IssueDeletedCategory',
+    'VisibilityCategory'
+  ];
+
+  const MENTION_CATEGORIES = [
+    'CommentMentionCategory', 'IssueMentionCategory', 'IssueMentionedInIssueCategory',
+    'IssueMentionedInIssueCommentCategory', 'IssueMentionedInWorkItemCategory',
+    'IssueMentionedInVcsChangesCategory', 'IssueMentionedInArticlesCategory',
+    'IssueMentionedInArticleCommentsCategory', 'IssueAllMentionedIssuesCategory',
+    'IssueAllMentionedArticlesCategory'
+  ];
+
+  const VOTER_CATEGORIES = [
+    'VotersCategory', 'TotalVotesCategory', 'StarCategory'
+  ];
+
   // 3. Activities
   activities.forEach(activity => {
     const author = activity.author;
@@ -64,19 +109,33 @@ export const collectParticipants = (issue: Issue, activities: ActivityItem[]): P
       return;
     }
 
-    const p = getOrCreateParticipant(author, activity.timestamp);
     const categoryId = activity.category.id;
 
-    if (categoryId === 'CommentsCategory') {
+    // Skip IssueCreatedCategory as requested
+    if (categoryId === 'IssueCreatedCategory') {
+      return;
+    }
+
+    const p = getOrCreateParticipant(author, activity.timestamp);
+
+    if (COMMENT_CATEGORIES.includes(categoryId)) {
       p.roles.add('commenter');
-    } else if (categoryId === 'AttachmentsCategory') {
-      p.roles.add('attachment uploader');
-    } else if (categoryId === 'IssueCreatedCategory') {
-      p.roles.add('creator');
-    } else if (categoryId === 'VCSChangeCategory') {
+    } else if (ATTACHMENT_CATEGORIES.includes(categoryId)) {
+      p.roles.add('attachment manager');
+    } else if (categoryId === 'DescriptionCategory') {
+      p.roles.add('description editor');
+    } else if (categoryId === 'SummaryCategory') {
+      p.roles.add('summary editor');
+    } else if (VCS_CATEGORIES.includes(categoryId)) {
       p.roles.add('vcs committer');
-    } else if (categoryId === 'WorkItemCategory') {
+    } else if (WORK_ITEM_CATEGORIES.includes(categoryId)) {
       p.roles.add('spent time author');
+    } else if (EDITOR_CATEGORIES.includes(categoryId)) {
+      p.roles.add('editor');
+    } else if (VOTER_CATEGORIES.includes(categoryId)) {
+      p.roles.add('voter');
+    } else if (MENTION_CATEGORIES.includes(categoryId)) {
+      p.roles.add('mentioned user');
     } else {
       p.roles.add('contributor');
     }

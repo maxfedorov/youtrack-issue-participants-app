@@ -31,12 +31,31 @@ const AppComponent: React.FunctionComponent = () => {
 
         const issueFields = [
           'id', 'idReadable', 'summary', 'reporter(login,fullName,avatarUrl)',
+          'updater(login,fullName,avatarUrl)', 'updated', 'created',
           'fields(value(login,fullName,avatarUrl,$type),projectCustomField(field(name,fieldType(valueType))))'
+        ].join(',');
+
+        const categories = [
+          'AttachmentsCategory', 'AttachmentRenameCategory', 'AttachmentVisibilityCategory',
+          'AttachmentRecognizedTextCategory', 'CommentsCategory', 'ArticleCommentsCategory',
+          'CommentAttachmentsCategory', 'CommentTextCategory', 'CommentReactionCategory',
+          'CommentTemporarilyDeletedCategory', 'CommentVisibilityCategory', 'CustomFieldCategory',
+          'DefaultCategory', 'DescriptionCategory', 'IssueDeletedCategory', 'IssueRestoredCategory',
+          'IssueResolvedCategory', 'LinksCategory', 'ProjectCategory', 'PullRequestChangeCategory',
+          'SprintCategory', 'SummaryCategory', 'TagsCategory', 'TotalVotesCategory',
+          'UpsourceReviewCategory', 'VcsChangeCategory', 'VcsChangeStateCategory',
+          'IssueVisibilityCategory', 'VotersCategory', 'WorkItemCategory', 'WorkItemTypeCategory',
+          'WorkItemDescriptionCategory', 'WorkItemDurationCategory', 'WorkItemDateCategory',
+          'WorkItemAuthorCategory', 'StarCategory', 'TicketCCEventCategory', 'CommentMentionCategory',
+          'IssueMentionCategory', 'IssueMentionedInIssueCategory', 'IssueMentionedInIssueCommentCategory',
+          'IssueMentionedInWorkItemCategory', 'IssueMentionedInVcsChangesCategory',
+          'IssueMentionedInArticlesCategory', 'IssueMentionedInArticleCommentsCategory',
+          'IssueAllMentionedIssuesCategory', 'IssueAllMentionedArticlesCategory'
         ].join(',');
 
         const [issueData, activitiesData] = await Promise.all([
           host.fetchYouTrack(`issues/${issueId}?fields=${issueFields}`),
-          host.fetchYouTrack(`issues/${issueId}/activitiesPage?categories=IssueCreatedCategory,CommentsCategory,CustomFieldCategory,AttachmentsCategory,WorkItemCategory,VCSChangeCategory&fields=activities(author(login,fullName,avatarUrl,$type),timestamp,category(id),field(presentation,customField(fieldType(valueType))),added(login,fullName,avatarUrl,$type))`)
+          host.fetchYouTrack(`issues/${issueId}/activitiesPage?categories=${categories}&fields=activities(author(login,fullName,avatarUrl,$type),timestamp,category(id),field(presentation,customField(fieldType(valueType))),added(login,fullName,avatarUrl,$type))`)
         ]);
 
         setIssue(extractResult(issueData));

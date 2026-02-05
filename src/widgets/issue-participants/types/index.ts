@@ -40,6 +40,9 @@ export interface Issue {
   idReadable: string;
   summary: string;
   reporter?: User;
+  updater?: User;
+  updated?: number;
+  created?: number;
   fields: IssueCustomField[];
   $type: 'Issue';
 }
