@@ -7,6 +7,7 @@ import LoaderInline from '@jetbrains/ring-ui-built/components/loader-inline/load
 import Text from '@jetbrains/ring-ui-built/components/text/text';
 import Avatar, {Size as AvatarSize} from '@jetbrains/ring-ui-built/components/avatar/avatar';
 import Link from '@jetbrains/ring-ui-built/components/link/link';
+import Tag from '@jetbrains/ring-ui-built/components/tag/tag';
 
 import './app.css';
 
@@ -46,11 +47,7 @@ const AppComponent: React.FunctionComponent = () => {
           'UpsourceReviewCategory', 'VcsChangeCategory', 'VcsChangeStateCategory',
           'IssueVisibilityCategory', 'VotersCategory', 'WorkItemCategory', 'WorkItemTypeCategory',
           'WorkItemDescriptionCategory', 'WorkItemDurationCategory', 'WorkItemDateCategory',
-          'WorkItemAuthorCategory', 'StarCategory', 'TicketCCEventCategory', 'CommentMentionCategory',
-          'IssueMentionCategory', 'IssueMentionedInIssueCategory', 'IssueMentionedInIssueCommentCategory',
-          'IssueMentionedInWorkItemCategory', 'IssueMentionedInVcsChangesCategory',
-          'IssueMentionedInArticlesCategory', 'IssueMentionedInArticleCommentsCategory',
-          'IssueAllMentionedIssuesCategory', 'IssueAllMentionedArticlesCategory'
+          'WorkItemAuthorCategory', 'StarCategory', 'TicketCCEventCategory'
         ].join(',');
 
         const [issueData, activitiesData] = await Promise.all([
@@ -72,6 +69,7 @@ const AppComponent: React.FunctionComponent = () => {
 
     loadData();
   }, []);
+
 
   const participants = useMemo(() => {
     if (!issue) {
@@ -110,12 +108,11 @@ const AppComponent: React.FunctionComponent = () => {
                   {p.fullName || p.login}
                 </Link>
               </div>
-              <Text
-                className="participantRoles"
-                title={roles}
-              >
-                {roles}
-              </Text>
+              <div className="participantRoles">
+                {roles.map(role => (
+                  <Tag key={role} readOnly>{role}</Tag>
+                ))}
+              </div>
             </div>
           </div>
         );

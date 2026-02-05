@@ -9,7 +9,6 @@
   },
   "icon": "icon.svg",
   "widgets": [
-
     {
       "key": "issue-participants",
       "name": "Issue Participants",
@@ -17,7 +16,7 @@
       "extensionPoint": "ISSUE_FIELD_PANEL_LAST",
       "iconPath": "issue-participants/widget-icon.svg",
       "description": "Issue Participants",
-      "permissions": []
+      "permissions": ["READ_USER", "READ_ISSUE"]
     }
   ]
 }

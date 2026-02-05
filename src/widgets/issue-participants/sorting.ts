@@ -26,6 +26,6 @@ export const getSortedParticipants = (participants: Participant[], reporterLogin
   });
 };
 
-export const formatRoles = (participant: Participant): string => {
-  return Array.from(participant.roles).join(', ');
+export const formatRoles = (participant: Participant): string[] => {
+  return Array.from(participant.roles);
 };

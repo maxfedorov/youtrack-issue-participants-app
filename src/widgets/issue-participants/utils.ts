@@ -101,14 +101,6 @@ export const collectParticipants = (issue: Issue, activities: ActivityItem[]): P
     'VisibilityCategory'
   ];
 
-  const MENTION_CATEGORIES = [
-    'CommentMentionCategory', 'IssueMentionCategory', 'IssueMentionedInIssueCategory',
-    'IssueMentionedInIssueCommentCategory', 'IssueMentionedInWorkItemCategory',
-    'IssueMentionedInVcsChangesCategory', 'IssueMentionedInArticlesCategory',
-    'IssueMentionedInArticleCommentsCategory', 'IssueAllMentionedIssuesCategory',
-    'IssueAllMentionedArticlesCategory'
-  ];
-
   const VOTER_CATEGORIES = [
     'VotersCategory', 'TotalVotesCategory', 'StarCategory'
   ];
@@ -145,8 +137,6 @@ export const collectParticipants = (issue: Issue, activities: ActivityItem[]): P
       p.roles.add('editor');
     } else if (VOTER_CATEGORIES.includes(categoryId)) {
       p.roles.add('voter');
-    } else if (MENTION_CATEGORIES.includes(categoryId)) {
-      p.roles.add('mentioned user');
     } else {
       p.roles.add('contributor');
     }

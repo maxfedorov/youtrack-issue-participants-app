@@ -36,9 +36,8 @@
 }
 
 .participantRoles {
-  font-size: var(--ring-font-size-smaller);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--ring-secondary-color);
+  margin-top: calc(var(--ring-unit) / 4);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
 }
