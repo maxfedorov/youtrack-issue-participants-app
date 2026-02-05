@@ -73,32 +73,13 @@ const AppComponent: React.FunctionComponent = () => {
     loadData();
   }, []);
 
-  const currentAssigneeLogin = useMemo(() => {
-    const assigneeField = issue?.fields.find(f => f.projectCustomField.field.name === 'Assignee');
-    return (assigneeField?.value as any)?.login;
-  }, [issue]);
-
-  const initialAssigneeLogin = useMemo(() => {
-    const assigneeActivities = activities
-      .filter(a => a.category.id === 'CustomFieldCategory' && a.field?.presentation === 'Assignee')
-      .sort((a, b) => a.timestamp - b.timestamp);
-    
-    if (assigneeActivities.length > 0) {
-      const firstActivity = assigneeActivities[0];
-      const added = Array.isArray(firstActivity.added) ? firstActivity.added : [firstActivity.added];
-      const firstAddedUser = added.find((v: any) => v && v.$type === 'User');
-      return (firstAddedUser as any)?.login;
-    }
-    return currentAssigneeLogin;
-  }, [activities, currentAssigneeLogin]);
-
   const participants = useMemo(() => {
     if (!issue) {
       return [];
     }
     const collected = collectParticipants(issue, activities);
-    return getSortedParticipants(collected, currentAssigneeLogin, issue.reporter?.login);
-  }, [issue, activities, currentAssigneeLogin]);
+    return getSortedParticipants(collected, issue.reporter?.login);
+  }, [issue, activities]);
 
   if (loading) {
     return <LoaderInline/>;
@@ -111,7 +92,7 @@ const AppComponent: React.FunctionComponent = () => {
   return (
     <div className="widget">
       {participants.map(p => {
-        const roles = formatRoles(p, currentAssigneeLogin, issue?.reporter?.login, initialAssigneeLogin);
+        const roles = formatRoles(p);
         return (
           <div key={p.login} className="participant">
             <Avatar

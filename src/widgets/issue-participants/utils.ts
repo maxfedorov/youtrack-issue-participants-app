@@ -43,22 +43,33 @@ export const collectParticipants = (issue: Issue, activities: ActivityItem[]): P
   }
 
   // 2. Fields
+  const currentFieldValues = new Map<string, Set<string>>(); // fieldName -> Set of logins
+
   issue.fields.forEach(field => {
     const value = field.value;
-    const fieldName = field.projectCustomField.field.name;
+    const fieldName = field.projectCustomField.field.name.toLowerCase();
     const valueType = field.projectCustomField.field.fieldType.valueType;
 
     if (valueType === 'user') {
+      if (!currentFieldValues.has(fieldName)) {
+        currentFieldValues.set(fieldName, new Set());
+      }
+      const logins = currentFieldValues.get(fieldName)!;
+
       if (Array.isArray(value)) {
         value.forEach((v: unknown) => {
           if (v && typeof v === 'object' && (v as any).$type === 'User') {
-            const p = getOrCreateParticipant(v as User, 0);
-            p.roles.add(fieldName.toLowerCase());
+            const user = v as User;
+            const p = getOrCreateParticipant(user, 0);
+            p.roles.add(fieldName);
+            logins.add(user.login);
           }
         });
       } else if (value && typeof value === 'object' && (value as any).$type === 'User') {
-        const p = getOrCreateParticipant(value as User, 0);
-        p.roles.add(fieldName.toLowerCase());
+        const user = value as User;
+        const p = getOrCreateParticipant(user, 0);
+        p.roles.add(fieldName);
+        logins.add(user.login);
       }
     }
   });
@@ -140,28 +151,19 @@ export const collectParticipants = (issue: Issue, activities: ActivityItem[]): P
       p.roles.add('contributor');
     }
 
-    // Special case: check for initial assignee
-    if (categoryId === 'CustomFieldCategory' && activity.field?.presentation === 'Assignee') {
-      if (activity.added) {
-        const added = Array.isArray(activity.added) ? activity.added : [activity.added];
-        added.forEach((v: unknown) => {
-          if (v && typeof v === 'object' && (v as any).$type === 'User') {
-            const ap = getOrCreateParticipant(v as User, activity.timestamp);
-            ap.roles.add('assignee');
-          }
-        });
-      }
-    }
-    
-    // Check for other user field changes
+    // Check for user field changes (including Assignee)
     if (categoryId === 'CustomFieldCategory' && activity.field?.customField?.fieldType.valueType === 'user') {
-      const fieldName = activity.field.presentation;
+      const fieldName = activity.field.presentation.toLowerCase();
       if (activity.added) {
         const added = Array.isArray(activity.added) ? activity.added : [activity.added];
         added.forEach((v: unknown) => {
           if (v && typeof v === 'object' && (v as any).$type === 'User') {
-            const ap = getOrCreateParticipant(v as User, activity.timestamp);
-            ap.roles.add(fieldName.toLowerCase());
+            const user = v as User;
+            const currentLogins = currentFieldValues.get(fieldName);
+            if (!currentLogins?.has(user.login)) {
+              const ap = getOrCreateParticipant(user, activity.timestamp);
+              ap.roles.add(`${fieldName} (past)`);
+            }
           }
         });
       }

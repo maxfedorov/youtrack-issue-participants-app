@@ -1,6 +1,6 @@
 import {Participant} from './types';
 
-export const getSortedParticipants = (participants: Participant[], currentAssigneeLogin?: string, reporterLogin?: string): Participant[] => {
+export const getSortedParticipants = (participants: Participant[], reporterLogin?: string): Participant[] => {
   return [...participants].sort((a, b) => {
     // 1. Reporter first
     if (a.login === reporterLogin) {
@@ -10,11 +10,14 @@ export const getSortedParticipants = (participants: Participant[], currentAssign
       return 1;
     }
 
-    // 2. Current assignee second
-    if (a.login === currentAssigneeLogin) {
+    // 2. Assignee (current) second
+    const isAAssignee = a.roles.has('assignee');
+    const isBAssignee = b.roles.has('assignee');
+
+    if (isAAssignee && !isBAssignee) {
       return -1;
     }
-    if (b.login === currentAssigneeLogin) {
+    if (!isAAssignee && isBAssignee) {
       return 1;
     }
 
@@ -23,20 +26,6 @@ export const getSortedParticipants = (participants: Participant[], currentAssign
   });
 };
 
-export const formatRoles = (participant: Participant, currentAssigneeLogin?: string, reporterLogin?: string, initialAssigneeLogin?: string): string => {
-  const roles = Array.from(participant.roles);
-  
-  return roles.map(role => {
-    let label = role;
-    if (role === 'assignee') {
-      if (participant.login === currentAssigneeLogin) {
-        label = 'assignee (current)';
-      } else if (participant.login === initialAssigneeLogin) {
-        label = 'assignee (initial)';
-      } else {
-        label = 'assignee (past)';
-      }
-    }
-    return label;
-  }).join(', ');
+export const formatRoles = (participant: Participant): string => {
+  return Array.from(participant.roles).join(', ');
 };
