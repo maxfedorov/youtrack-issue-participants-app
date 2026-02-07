@@ -188,7 +188,14 @@ const AppComponent: React.FunctionComponent = () => {
               </div>
               <div className="participantRoles">
                 {roles.map(role => (
-                  <Tag key={role} readOnly>{role}</Tag>
+                  <Tag
+                    key={role}
+                    readOnly
+                    onClick={() => toggleRole(role)}
+                    tagType={selectedRoles.has(role) ? Tag.Type.MAIN : Tag.Type.DEFAULT}
+                  >
+                    {role}
+                  </Tag>
                 ))}
               </div>
             </div>
