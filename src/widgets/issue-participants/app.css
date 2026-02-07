@@ -57,6 +57,17 @@
   font-weight: bold;
 }
 
+.filtersHeader {
+  display: flex;
+  align-items: center;
+}
+
+.clearFiltersButton {
+  min-width: 24px !important;
+  width: 24px;
+  padding: 0 !important;
+}
+
 .filtersList {
   display: flex;
   flex-wrap: wrap;

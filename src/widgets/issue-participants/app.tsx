@@ -8,7 +8,9 @@ import Text from '@jetbrains/ring-ui-built/components/text/text';
 import Avatar, {Size as AvatarSize} from '@jetbrains/ring-ui-built/components/avatar/avatar';
 import Link from '@jetbrains/ring-ui-built/components/link/link';
 import Tag from '@jetbrains/ring-ui-built/components/tag/tag';
+import Button from '@jetbrains/ring-ui-built/components/button/button';
 import Collapse from '@jetbrains/ring-ui-built/components/collapse/collapse';
+import CloseIcon from '@jetbrains/icons/close-12px';
 import CollapseControl from '@jetbrains/ring-ui-built/components/collapse/collapse-control';
 import CollapseContent from '@jetbrains/ring-ui-built/components/collapse/collapse-content';
 
@@ -125,9 +127,22 @@ const AppComponent: React.FunctionComponent = () => {
         <Collapse className="filtersCollapse" defaultCollapsed>
           <CollapseControl>
             {(collapsed: boolean) => (
-              <Link className="filtersToggle">
-                {collapsed ? 'Show filters' : 'Hide filters'}
-              </Link>
+              <div className="filtersHeader">
+                <Link className="filtersToggle">
+                  {collapsed ? 'Show filters' : 'Hide filters'}
+                </Link>
+                {selectedRoles.size > 0 && (
+                  <Button
+                    title="Clear filters"
+                    icon={CloseIcon}
+                    onClick={(e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      setSelectedRoles(new Set());
+                    }}
+                    className="clearFiltersButton"
+                  />
+                )}
+              </div>
             )}
           </CollapseControl>
           <CollapseContent>
