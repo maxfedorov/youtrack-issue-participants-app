@@ -41,3 +41,24 @@
   flex-wrap: wrap;
   gap: 2px;
 }
+
+.filtersCollapse {
+  border-bottom: 1px solid var(--ring-border-disabled-color);
+  padding-bottom: var(--ring-unit);
+}
+
+.filtersCollapse p {
+  margin-bottom: 0;
+  margin-top: 0;
+}
+
+.filtersToggle {
+  font-size: var(--ring-font-size-smaller);
+  font-weight: bold;
+}
+
+.filtersList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}

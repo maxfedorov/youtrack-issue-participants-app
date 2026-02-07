@@ -8,6 +8,9 @@ import Text from '@jetbrains/ring-ui-built/components/text/text';
 import Avatar, {Size as AvatarSize} from '@jetbrains/ring-ui-built/components/avatar/avatar';
 import Link from '@jetbrains/ring-ui-built/components/link/link';
 import Tag from '@jetbrains/ring-ui-built/components/tag/tag';
+import Collapse from '@jetbrains/ring-ui-built/components/collapse/collapse';
+import CollapseControl from '@jetbrains/ring-ui-built/components/collapse/collapse-control';
+import CollapseContent from '@jetbrains/ring-ui-built/components/collapse/collapse-content';
 
 import './app.css';
 
@@ -79,6 +82,35 @@ const AppComponent: React.FunctionComponent = () => {
     return getSortedParticipants(collected, issue.reporter?.login);
   }, [issue, activities]);
 
+  const allRoles = useMemo(() => {
+    const roles = new Set<string>();
+    participants.forEach(p => {
+      p.roles.forEach(role => roles.add(role));
+    });
+    return Array.from(roles).sort();
+  }, [participants]);
+
+  const [selectedRoles, setSelectedRoles] = useState<Set<string>>(new Set());
+
+  const toggleRole = (role: string) => {
+    const newSelected = new Set(selectedRoles);
+    if (newSelected.has(role)) {
+      newSelected.delete(role);
+    } else {
+      newSelected.add(role);
+    }
+    setSelectedRoles(newSelected);
+  };
+
+  const filteredParticipants = useMemo(() => {
+    if (selectedRoles.size === 0) {
+      return participants;
+    }
+    return participants.filter(p =>
+      Array.from(p.roles).some(role => selectedRoles.has(role))
+    );
+  }, [participants, selectedRoles]);
+
   if (loading) {
     return <LoaderInline/>;
   }
@@ -89,7 +121,31 @@ const AppComponent: React.FunctionComponent = () => {
 
   return (
     <div className="widget">
-      {participants.map(p => {
+      {allRoles.length > 0 && (
+        <Collapse className="filtersCollapse" defaultCollapsed>
+          <CollapseControl>
+            {(collapsed: boolean) => (
+              <Link className="filtersToggle">
+                {collapsed ? 'Show filters' : 'Hide filters'}
+              </Link>
+            )}
+          </CollapseControl>
+          <CollapseContent>
+            <div className="filtersList">
+              {allRoles.map(role => (
+                <Tag
+                  key={role}
+                  onClick={() => toggleRole(role)}
+                  tagType={selectedRoles.has(role) ? Tag.Type.MAIN : Tag.Type.DEFAULT}
+                >
+                  {role}
+                </Tag>
+              ))}
+            </div>
+          </CollapseContent>
+        </Collapse>
+      )}
+      {filteredParticipants.map(p => {
         const roles = formatRoles(p);
         return (
           <div key={p.login} className="participant">
