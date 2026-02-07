@@ -144,9 +144,12 @@ export const collectParticipants = (issue: Issue, activities: ActivityItem[]): P
     // Check for user field changes (including Assignee)
     if (categoryId === 'CustomFieldCategory' && activity.field?.customField?.fieldType.valueType === 'user') {
       const fieldName = activity.field.presentation.toLowerCase();
-      if (activity.added) {
-        const added = Array.isArray(activity.added) ? activity.added : [activity.added];
-        added.forEach((v: unknown) => {
+      const processValues = (values: unknown) => {
+        if (!values) {
+          return;
+        }
+        const vals = Array.isArray(values) ? values : [values];
+        vals.forEach((v: unknown) => {
           if (v && typeof v === 'object' && (v as any).$type === 'User') {
             const user = v as User;
             const currentLogins = currentFieldValues.get(fieldName);
@@ -156,7 +159,10 @@ export const collectParticipants = (issue: Issue, activities: ActivityItem[]): P
             }
           }
         });
-      }
+      };
+
+      processValues(activity.added);
+      processValues(activity.removed);
     }
   });
 

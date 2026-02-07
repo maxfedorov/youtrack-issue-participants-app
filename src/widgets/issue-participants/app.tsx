@@ -55,7 +55,7 @@ const AppComponent: React.FunctionComponent = () => {
 
         const [issueData, activitiesData] = await Promise.all([
           host.fetchYouTrack(`issues/${issueId}?fields=${issueFields}`),
-          host.fetchYouTrack(`issues/${issueId}/activitiesPage?categories=${categories}&fields=activities(author(login,fullName,avatarUrl,$type),timestamp,category(id),field(presentation,customField(fieldType(valueType))),added(login,fullName,avatarUrl,$type))`)
+          host.fetchYouTrack(`issues/${issueId}/activitiesPage?categories=${categories}&fields=activities(author(login,fullName,avatarUrl,$type),timestamp,category(id),field(presentation,customField(fieldType(valueType))),added(login,fullName,avatarUrl,$type),removed(login,fullName,avatarUrl,$type))`)
         ]);
 
         setIssue(extractResult(issueData));
