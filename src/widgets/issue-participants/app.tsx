@@ -10,7 +10,10 @@ import Link from '@jetbrains/ring-ui-built/components/link/link';
 import Tag from '@jetbrains/ring-ui-built/components/tag/tag';
 import Button from '@jetbrains/ring-ui-built/components/button/button';
 import Collapse from '@jetbrains/ring-ui-built/components/collapse/collapse';
+import Icon from '@jetbrains/ring-ui-built/components/icon/icon';
 import CloseIcon from '@jetbrains/icons/close-12px';
+import ChevronDownIcon from '@jetbrains/icons/chevron-down';
+import ChevronUpIcon from '@jetbrains/icons/chevron-up';
 import CollapseControl from '@jetbrains/ring-ui-built/components/collapse/collapse-control';
 import CollapseContent from '@jetbrains/ring-ui-built/components/collapse/collapse-content';
 
@@ -128,6 +131,10 @@ const AppComponent: React.FunctionComponent = () => {
           <CollapseControl>
             {(collapsed: boolean) => (
               <div className="filtersHeader">
+                <Icon
+                  glyph={collapsed ? ChevronDownIcon : ChevronUpIcon}
+                  className="filtersChevron"
+                />
                 <Link className="filtersToggle">
                   {collapsed ? 'Show filters' : 'Hide filters'}
                 </Link>
