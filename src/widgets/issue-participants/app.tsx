@@ -22,6 +22,8 @@ import './app.css';
 // Register widget in YouTrack. To learn more, see https://www.jetbrains.com/help/youtrack/devportal-apps/apps-host-api.html
 const host = await YTApp.register();
 
+const normalizeRole = (role: string) => role.replace(/ \((initial|past)\)$/, '');
+
 const AppComponent: React.FunctionComponent = () => {
   const [issue, setIssue] = useState<Issue | null>(null);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
@@ -90,7 +92,7 @@ const AppComponent: React.FunctionComponent = () => {
   const allRoles = useMemo(() => {
     const roles = new Set<string>();
     participants.forEach(p => {
-      p.roles.forEach(role => roles.add(role));
+      p.roles.forEach(role => roles.add(normalizeRole(role)));
     });
     return Array.from(roles).sort();
   }, [participants]);
@@ -98,11 +100,12 @@ const AppComponent: React.FunctionComponent = () => {
   const [selectedRoles, setSelectedRoles] = useState<Set<string>>(new Set());
 
   const toggleRole = (role: string) => {
+    const normalized = normalizeRole(role);
     const newSelected = new Set(selectedRoles);
-    if (newSelected.has(role)) {
-      newSelected.delete(role);
+    if (newSelected.has(normalized)) {
+      newSelected.delete(normalized);
     } else {
-      newSelected.add(role);
+      newSelected.add(normalized);
     }
     setSelectedRoles(newSelected);
   };
@@ -112,7 +115,7 @@ const AppComponent: React.FunctionComponent = () => {
       return participants;
     }
     return participants.filter(p =>
-      Array.from(p.roles).some(role => selectedRoles.has(role))
+      Array.from(p.roles).some(role => selectedRoles.has(normalizeRole(role)))
     );
   }, [participants, selectedRoles]);
 
@@ -192,7 +195,7 @@ const AppComponent: React.FunctionComponent = () => {
                     key={role}
                     readOnly
                     onClick={() => toggleRole(role)}
-                    tagType={selectedRoles.has(role) ? Tag.Type.MAIN : Tag.Type.DEFAULT}
+                    tagType={selectedRoles.has(normalizeRole(role)) ? Tag.Type.MAIN : Tag.Type.DEFAULT}
                   >
                     {role}
                   </Tag>
