@@ -16,7 +16,10 @@
       "extensionPoint": "ISSUE_FIELD_PANEL_LAST",
       "iconPath": "issue-participants/widget-icon.svg",
       "description": "View all participants and their roles based on current state and activity.",
-      "permissions": ["READ_USER", "READ_ISSUE"]
+      "permissions": ["READ_USER", "READ_ISSUE"],
+      "expectedDimensions": {
+        "height": 300
+      }
     }
   ]
 }
