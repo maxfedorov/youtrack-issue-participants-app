@@ -74,6 +74,20 @@ export const collectParticipants = (issue: Issue, activities: ActivityItem[]): P
     }
   });
 
+  const fieldHistory = new Map<string, {
+    earliestTimestamp: number;
+    initialLogins: Set<string>;
+    allHistoricalUsers: Map<string, {user: User, timestamp: number}>;
+  }>();
+
+  const getUsers = (values: unknown): User[] => {
+    if (!values) {
+      return [];
+    }
+    const vals = Array.isArray(values) ? values : [values];
+    return vals.filter(v => v && typeof v === 'object' && (v as any).$type === 'User') as User[];
+  };
+
   const COMMENT_CATEGORIES = [
     'CommentsCategory', 'ArticleCommentsCategory', 'CommentAttachmentsCategory',
     'CommentTextCategory', 'CommentReactionCategory', 'CommentTemporarilyDeletedCategory',
@@ -144,26 +158,60 @@ export const collectParticipants = (issue: Issue, activities: ActivityItem[]): P
     // Check for user field changes (including Assignee)
     if (categoryId === 'CustomFieldCategory' && activity.field?.customField?.fieldType.valueType === 'user') {
       const fieldName = activity.field.presentation.toLowerCase();
-      const processValues = (values: unknown) => {
-        if (!values) {
-          return;
+      if (!fieldHistory.has(fieldName)) {
+        fieldHistory.set(fieldName, {
+          earliestTimestamp: Infinity,
+          initialLogins: new Set(),
+          allHistoricalUsers: new Map()
+        });
+      }
+      const history = fieldHistory.get(fieldName)!;
+      const added = getUsers(activity.added);
+      const removed = getUsers(activity.removed);
+
+      if (added.length > 0 || removed.length > 0) {
+        if (activity.timestamp < history.earliestTimestamp) {
+          history.earliestTimestamp = activity.timestamp;
+          history.initialLogins.clear();
+          if (removed.length > 0) {
+            removed.forEach(u => history.initialLogins.add(u.login));
+          } else {
+            added.forEach(u => history.initialLogins.add(u.login));
+          }
+        } else if (activity.timestamp === history.earliestTimestamp) {
+          if (removed.length > 0) {
+            removed.forEach(u => history.initialLogins.add(u.login));
+          } else {
+            added.forEach(u => history.initialLogins.add(u.login));
+          }
         }
-        const vals = Array.isArray(values) ? values : [values];
-        vals.forEach((v: unknown) => {
-          if (v && typeof v === 'object' && (v as any).$type === 'User') {
-            const user = v as User;
-            const currentLogins = currentFieldValues.get(fieldName);
-            if (!currentLogins?.has(user.login)) {
-              const ap = getOrCreateParticipant(user, activity.timestamp);
-              ap.roles.add(`${fieldName} (past)`);
+
+        [...added, ...removed].forEach(user => {
+          if (!history.allHistoricalUsers.has(user.login)) {
+            history.allHistoricalUsers.set(user.login, {user, timestamp: activity.timestamp});
+          } else {
+            const existing = history.allHistoricalUsers.get(user.login)!;
+            if (activity.timestamp > existing.timestamp) {
+              existing.timestamp = activity.timestamp;
             }
           }
         });
-      };
-
-      processValues(activity.added);
-      processValues(activity.removed);
+      }
     }
+  });
+
+  fieldHistory.forEach((history, fieldName) => {
+    const currentLogins = currentFieldValues.get(fieldName) || new Set();
+    history.allHistoricalUsers.forEach(({user, timestamp}, login) => {
+      if (!currentLogins.has(login)) {
+        const p = getOrCreateParticipant(user, timestamp);
+        if (history.initialLogins.has(login)) {
+          p.roles.add(`${fieldName} (initial)`);
+        } else {
+          p.roles.add(`${fieldName} (past)`);
+        }
+      }
+    });
   });
 
   return Array.from(participantsMap.values());
