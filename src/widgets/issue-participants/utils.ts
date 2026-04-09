@@ -1,218 +1,229 @@
-/* eslint-disable complexity */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import {Issue, ActivityItem, Participant, User} from './types';
+import type {Issue, ActivityItem, Participant, User} from './types';
 
-export const extractResult = (response: unknown): any => {
-  if (response && typeof response === 'object' && 'result' in (response as object)) {
-    return (response as any).result;
+const COMMENT_CATEGORIES = new Set([
+  'CommentsCategory', 'ArticleCommentsCategory', 'CommentAttachmentsCategory',
+  'CommentTextCategory', 'CommentReactionCategory', 'CommentTemporarilyDeletedCategory',
+  'CommentVisibilityCategory',
+]);
+
+const ATTACHMENT_CATEGORIES = new Set([
+  'AttachmentsCategory', 'AttachmentRenameCategory', 'AttachmentVisibilityCategory',
+  'AttachmentRecognizedTextCategory',
+]);
+
+const WORK_ITEM_CATEGORIES = new Set([
+  'WorkItemCategory', 'WorkItemTypeCategory', 'WorkItemDescriptionCategory',
+  'WorkItemDurationCategory', 'WorkItemDateCategory', 'WorkItemAuthorCategory',
+]);
+
+const VCS_CATEGORIES = new Set([
+  'VcsChangeCategory', 'VcsChangeStateCategory', 'PullRequestChangeCategory',
+  'UpsourceReviewCategory',
+]);
+
+const EDITOR_CATEGORIES = new Set([
+  'CustomFieldCategory', 'TagsCategory', 'LinksCategory', 'ProjectCategory',
+  'SprintCategory', 'IssueVisibilityCategory', 'IssueResolvedCategory',
+  'IssueRestoredCategory', 'IssueDeletedCategory',
+]);
+
+const VOTER_CATEGORIES = new Set([
+  'VotersCategory', 'TotalVotesCategory', 'StarCategory',
+]);
+
+interface FieldHistory {
+  earliestTimestamp: number;
+  initialLogins: Set<string>;
+  allHistoricalUsers: Map<string, { user: User; timestamp: number }>;
+}
+
+function isUser(value: unknown): value is User {
+  return !!value && typeof value === 'object' && (value as User).$type === 'User';
+}
+
+function getUsers(values: unknown): User[] {
+  if (!values) {
+    return [];
   }
-  return response;
-};
+  const arr = Array.isArray(values) ? values : [values];
+  return arr.filter(isUser);
+}
 
-export const collectParticipants = (issue: Issue, activities: ActivityItem[]): Participant[] => {
-  const participantsMap = new Map<string, Participant>();
+function getRoleForCategory(categoryId: string): string {
+  if (COMMENT_CATEGORIES.has(categoryId)) { return 'commenter'; }
+  if (ATTACHMENT_CATEGORIES.has(categoryId)) { return 'attachment manager'; }
+  if (categoryId === 'DescriptionCategory') { return 'description editor'; }
+  if (categoryId === 'SummaryCategory') { return 'summary editor'; }
+  if (VCS_CATEGORIES.has(categoryId)) { return 'vcs committer'; }
+  if (WORK_ITEM_CATEGORIES.has(categoryId)) { return 'spent time author'; }
+  if (EDITOR_CATEGORIES.has(categoryId)) { return 'editor'; }
+  if (VOTER_CATEGORIES.has(categoryId)) { return 'voter'; }
+  return 'contributor';
+}
 
-  const getOrCreateParticipant = (user: User, timestamp: number): Participant => {
-    let participant = participantsMap.get(user.login);
-    if (!participant) {
-      participant = {
-        login: user.login,
-        fullName: user.fullName,
-        avatarUrl: user.avatarUrl,
-        roles: new Set<string>(),
-        lastActivityTimestamp: timestamp
-      };
-      participantsMap.set(user.login, participant);
+type ParticipantsMap = Map<string, Participant>;
+
+function getOrCreate(map: ParticipantsMap, user: User, timestamp: number): Participant {
+  let p = map.get(user.login);
+  if (!p) {
+    p = {
+      login: user.login,
+      fullName: user.fullName,
+      avatarUrl: user.avatarUrl,
+      roles: new Set<string>(),
+      lastActivityTimestamp: timestamp,
+    };
+    map.set(user.login, p);
+  }
+  if (timestamp > p.lastActivityTimestamp) {
+    p.lastActivityTimestamp = timestamp;
+  }
+  return p;
+}
+
+function collectCurrentFieldValues(
+  map: ParticipantsMap,
+  issue: Issue,
+): Map<string, Set<string>> {
+  const currentFieldValues = new Map<string, Set<string>>();
+
+  for (const field of issue.fields) {
+    const valueType = field.projectCustomField?.field?.fieldType?.valueType;
+    if (valueType !== 'user') {
+      continue;
     }
-    if (timestamp > participant.lastActivityTimestamp) {
-      participant.lastActivityTimestamp = timestamp;
-    }
-    return participant;
-  };
 
-  // 1. Reporter
-  if (issue.reporter) {
-    const p = getOrCreateParticipant(issue.reporter, issue.created || 0);
-    p.roles.add('reporter');
-  }
-
-  // 1.1 Updater
-  if (issue.updater) {
-    const p = getOrCreateParticipant(issue.updater, issue.updated || 0);
-    p.roles.add('last updater');
-  }
-
-  // 2. Fields
-  const currentFieldValues = new Map<string, Set<string>>(); // fieldName -> Set of logins
-
-  issue.fields.forEach(field => {
-    const value = field.value;
     const fieldName = field.projectCustomField.field.name.toLowerCase();
-    const valueType = field.projectCustomField.field.fieldType.valueType;
+    if (!currentFieldValues.has(fieldName)) {
+      currentFieldValues.set(fieldName, new Set());
+    }
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- guaranteed by the has-check above
+    const logins = currentFieldValues.get(fieldName)!;
+    const values = Array.isArray(field.value) ? field.value : [field.value];
 
-    if (valueType === 'user') {
-      if (!currentFieldValues.has(fieldName)) {
-        currentFieldValues.set(fieldName, new Set());
-      }
-      const logins = currentFieldValues.get(fieldName)!;
-
-      if (Array.isArray(value)) {
-        value.forEach((v: unknown) => {
-          if (v && typeof v === 'object' && (v as any).$type === 'User') {
-            const user = v as User;
-            const p = getOrCreateParticipant(user, 0);
-            p.roles.add(fieldName);
-            logins.add(user.login);
-          }
-        });
-      } else if (value && typeof value === 'object' && (value as any).$type === 'User') {
-        const user = value as User;
-        const p = getOrCreateParticipant(user, 0);
-        p.roles.add(fieldName);
-        logins.add(user.login);
+    for (const v of values) {
+      if (isUser(v)) {
+        getOrCreate(map, v, 0).roles.add(fieldName);
+        logins.add(v.login);
       }
     }
-  });
+  }
 
-  const fieldHistory = new Map<string, {
-    earliestTimestamp: number;
-    initialLogins: Set<string>;
-    allHistoricalUsers: Map<string, {user: User, timestamp: number}>;
-  }>();
+  return currentFieldValues;
+}
 
-  const getUsers = (values: unknown): User[] => {
-    if (!values) {
-      return [];
+function updateFieldHistory(
+  history: FieldHistory,
+  activity: ActivityItem,
+): void {
+  const added = getUsers(activity.added);
+  const removed = getUsers(activity.removed);
+
+  if (added.length === 0 && removed.length === 0) {
+    return;
+  }
+
+  if (activity.timestamp < history.earliestTimestamp) {
+    history.earliestTimestamp = activity.timestamp;
+    history.initialLogins.clear();
+    const initial = removed.length > 0 ? removed : added;
+    for (const u of initial) {
+      history.initialLogins.add(u.login);
     }
-    const vals = Array.isArray(values) ? values : [values];
-    return vals.filter(v => v && typeof v === 'object' && (v as any).$type === 'User') as User[];
-  };
-
-  const COMMENT_CATEGORIES = [
-    'CommentsCategory', 'ArticleCommentsCategory', 'CommentAttachmentsCategory',
-    'CommentTextCategory', 'CommentReactionCategory', 'CommentTemporarilyDeletedCategory',
-    'CommentVisibilityCategory', 'CommentMentionCategory'
-  ];
-
-  const ATTACHMENT_CATEGORIES = [
-    'AttachmentsCategory', 'AttachmentRenameCategory', 'AttachmentVisibilityCategory',
-    'AttachmentRecognizedTextCategory'
-  ];
-
-  const WORK_ITEM_CATEGORIES = [
-    'WorkItemCategory', 'WorkItemTypeCategory', 'WorkItemDescriptionCategory',
-    'WorkItemDurationCategory', 'WorkItemDateCategory', 'WorkItemAuthorCategory'
-  ];
-
-  const VCS_CATEGORIES = [
-    'VcsChangeCategory', 'VcsChangeStateCategory', 'PullRequestChangeCategory', 'UpsourceReviewCategory'
-  ];
-
-  const EDITOR_CATEGORIES = [
-    'CustomFieldCategory', 'TagsCategory',
-    'LinksCategory', 'ProjectCategory', 'SprintCategory', 'IssueVisibilityCategory',
-    'IssueResolvedCategory', 'IssueRestoredCategory', 'IssueDeletedCategory',
-    'VisibilityCategory'
-  ];
-
-  const VOTER_CATEGORIES = [
-    'VotersCategory', 'TotalVotesCategory', 'StarCategory'
-  ];
-
-  // 3. Activities
-  activities.forEach(activity => {
-    const author = activity.author;
-    if (!author || (author as any).$type !== 'User') {
-      return;
+  } else if (activity.timestamp === history.earliestTimestamp) {
+    const initial = removed.length > 0 ? removed : added;
+    for (const u of initial) {
+      history.initialLogins.add(u.login);
     }
+  }
 
-    const categoryId = activity.category.id;
+  for (const user of [...added, ...removed]) {
+    const existing = history.allHistoricalUsers.get(user.login);
+    if (!existing) {
+      history.allHistoricalUsers.set(user.login, {user, timestamp: activity.timestamp});
+    } else if (activity.timestamp > existing.timestamp) {
+      existing.timestamp = activity.timestamp;
+    }
+  }
+}
 
-    // Skip IssueCreatedCategory as requested
-    if (categoryId === 'IssueCreatedCategory') {
-      return;
+function processActivities(
+  map: ParticipantsMap,
+  activities: ActivityItem[],
+): Map<string, FieldHistory> {
+  const fieldHistory = new Map<string, FieldHistory>();
+
+  for (const activity of activities) {
+    if (!activity.author || !isUser(activity.author)) {
+      continue;
+    }
+    if (activity.category.id === 'IssueCreatedCategory') {
+      continue;
     }
 
-    const p = getOrCreateParticipant(author, activity.timestamp);
+    const p = getOrCreate(map, activity.author, activity.timestamp);
+    p.roles.add(getRoleForCategory(activity.category.id));
 
-    if (COMMENT_CATEGORIES.includes(categoryId)) {
-      p.roles.add('commenter');
-    } else if (ATTACHMENT_CATEGORIES.includes(categoryId)) {
-      p.roles.add('attachment manager');
-    } else if (categoryId === 'DescriptionCategory') {
-      p.roles.add('description editor');
-    } else if (categoryId === 'SummaryCategory') {
-      p.roles.add('summary editor');
-    } else if (VCS_CATEGORIES.includes(categoryId)) {
-      p.roles.add('vcs committer');
-    } else if (WORK_ITEM_CATEGORIES.includes(categoryId)) {
-      p.roles.add('spent time author');
-    } else if (EDITOR_CATEGORIES.includes(categoryId)) {
-      p.roles.add('editor');
-    } else if (VOTER_CATEGORIES.includes(categoryId)) {
-      p.roles.add('voter');
-    } else {
-      p.roles.add('contributor');
-    }
+    // Track user-field changes for initial/past labels
+    const isUserFieldChange =
+      activity.category.id === 'CustomFieldCategory' &&
+      activity.field?.customField?.fieldType.valueType === 'user';
 
-    // Check for user field changes (including Assignee)
-    if (categoryId === 'CustomFieldCategory' && activity.field?.customField?.fieldType.valueType === 'user') {
+    if (isUserFieldChange && activity.field) {
       const fieldName = activity.field.presentation.toLowerCase();
-      if (!fieldHistory.has(fieldName)) {
-        fieldHistory.set(fieldName, {
+      let history = fieldHistory.get(fieldName);
+      if (!history) {
+        history = {
           earliestTimestamp: Infinity,
           initialLogins: new Set(),
-          allHistoricalUsers: new Map()
-        });
+          allHistoricalUsers: new Map(),
+        };
+        fieldHistory.set(fieldName, history);
       }
-      const history = fieldHistory.get(fieldName)!;
-      const added = getUsers(activity.added);
-      const removed = getUsers(activity.removed);
+      updateFieldHistory(history, activity);
+    }
+  }
 
-      if (added.length > 0 || removed.length > 0) {
-        if (activity.timestamp < history.earliestTimestamp) {
-          history.earliestTimestamp = activity.timestamp;
-          history.initialLogins.clear();
-          if (removed.length > 0) {
-            removed.forEach(u => history.initialLogins.add(u.login));
-          } else {
-            added.forEach(u => history.initialLogins.add(u.login));
-          }
-        } else if (activity.timestamp === history.earliestTimestamp) {
-          if (removed.length > 0) {
-            removed.forEach(u => history.initialLogins.add(u.login));
-          } else {
-            added.forEach(u => history.initialLogins.add(u.login));
-          }
-        }
+  return fieldHistory;
+}
 
-        [...added, ...removed].forEach(user => {
-          if (!history.allHistoricalUsers.has(user.login)) {
-            history.allHistoricalUsers.set(user.login, {user, timestamp: activity.timestamp});
-          } else {
-            const existing = history.allHistoricalUsers.get(user.login)!;
-            if (activity.timestamp > existing.timestamp) {
-              existing.timestamp = activity.timestamp;
-            }
-          }
-        });
+function applyHistoricalLabels(
+  map: ParticipantsMap,
+  fieldHistory: Map<string, FieldHistory>,
+  currentFieldValues: Map<string, Set<string>>,
+): void {
+  for (const [fieldName, history] of fieldHistory) {
+    const currentLogins = currentFieldValues.get(fieldName) ?? new Set();
+    for (const [login, {user, timestamp}] of history.allHistoricalUsers) {
+      if (!currentLogins.has(login)) {
+        const suffix = history.initialLogins.has(login) ? '(initial)' : '(past)';
+        getOrCreate(map, user, timestamp).roles.add(`${fieldName} ${suffix}`);
       }
     }
-  });
+  }
+}
 
-  fieldHistory.forEach((history, fieldName) => {
-    const currentLogins = currentFieldValues.get(fieldName) || new Set();
-    history.allHistoricalUsers.forEach(({user, timestamp}, login) => {
-      if (!currentLogins.has(login)) {
-        const p = getOrCreateParticipant(user, timestamp);
-        if (history.initialLogins.has(login)) {
-          p.roles.add(`${fieldName} (initial)`);
-        } else {
-          p.roles.add(`${fieldName} (past)`);
-        }
-      }
-    });
-  });
+export function collectParticipants(issue: Issue, activities: ActivityItem[]): Participant[] {
+  const map: ParticipantsMap = new Map();
 
-  return Array.from(participantsMap.values());
-};
+  // Reporter
+  if (issue.reporter) {
+    getOrCreate(map, issue.reporter, issue.created ?? 0).roles.add('reporter');
+  }
+
+  // Last updater
+  if (issue.updater) {
+    getOrCreate(map, issue.updater, issue.updated ?? 0).roles.add('last updater');
+  }
+
+  // Current user-type field values
+  const currentFieldValues = collectCurrentFieldValues(map, issue);
+
+  // Activities: assign roles and track field history
+  const fieldHistory = processActivities(map, activities);
+
+  // Apply initial/past labels for historical field assignments
+  applyHistoricalLabels(map, fieldHistory, currentFieldValues);
+
+  return Array.from(map.values());
+}
