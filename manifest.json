@@ -2,6 +2,7 @@
   "name": "issue-participants",
   "title": "Issue Participants",
   "description": "Displays a list of all issue participants, identifying their roles based on current state and activity.",
+  "version": "1.0.0",
   "$schema": "https://json.schemastore.org/youtrack-app.json",
   "vendor": {
     "name": "Maksim Fedorov",
