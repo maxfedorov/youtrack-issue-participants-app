@@ -17,7 +17,9 @@
       "iconPath": "issue-participants/widget-icon.svg",
       "description": "View all participants and their roles based on current state and activity.",
       "guard": "({entity}) => !entity.draft",
-      "permissions": ["READ_USER"],
+      "permissions": [
+        "READ_USER"
+      ],
       "expectedDimensions": {
         "height": 300
       }

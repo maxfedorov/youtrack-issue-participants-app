@@ -1,8 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, {memo, useEffect, useState, useMemo} from 'react';
-import {Issue, ActivityItem, ActivityPage} from './types';
-import {collectParticipants, extractResult} from './utils';
-import {getSortedParticipants, formatRoles} from './sorting';
 import LoaderInline from '@jetbrains/ring-ui-built/components/loader-inline/loader-inline';
 import Text from '@jetbrains/ring-ui-built/components/text/text';
 import Avatar, {Size as AvatarSize} from '@jetbrains/ring-ui-built/components/avatar/avatar';
@@ -17,10 +13,39 @@ import ChevronUpIcon from '@jetbrains/icons/chevron-up';
 import CollapseControl from '@jetbrains/ring-ui-built/components/collapse/collapse-control';
 import CollapseContent from '@jetbrains/ring-ui-built/components/collapse/collapse-content';
 
+import type {Issue, ActivityItem, ActivityPage} from './types';
+import {collectParticipants} from './utils';
+import {getSortedParticipants} from './sorting';
+
 import './app.css';
 
-// Register widget in YouTrack. To learn more, see https://www.jetbrains.com/help/youtrack/devportal-apps/apps-host-api.html
 const host = await YTApp.register();
+
+const ISSUE_FIELDS = [
+  'id', 'idReadable', 'summary', 'reporter(login,fullName,avatarUrl)',
+  'updater(login,fullName,avatarUrl)', 'updated', 'created',
+  'fields(value(login,fullName,avatarUrl,$type),projectCustomField(field(name,fieldType(valueType))))',
+].join(',');
+
+const ACTIVITY_CATEGORIES = [
+  'AttachmentsCategory', 'AttachmentRenameCategory', 'AttachmentVisibilityCategory',
+  'AttachmentRecognizedTextCategory', 'CommentsCategory', 'ArticleCommentsCategory',
+  'CommentAttachmentsCategory', 'CommentTextCategory', 'CommentReactionCategory',
+  'CommentTemporarilyDeletedCategory', 'CommentVisibilityCategory', 'CustomFieldCategory',
+  'DefaultCategory', 'DescriptionCategory', 'IssueDeletedCategory', 'IssueRestoredCategory',
+  'IssueResolvedCategory', 'LinksCategory', 'ProjectCategory', 'PullRequestChangeCategory',
+  'SprintCategory', 'SummaryCategory', 'TagsCategory', 'TotalVotesCategory',
+  'UpsourceReviewCategory', 'VcsChangeCategory', 'VcsChangeStateCategory',
+  'IssueVisibilityCategory', 'VotersCategory', 'WorkItemCategory', 'WorkItemTypeCategory',
+  'WorkItemDescriptionCategory', 'WorkItemDurationCategory', 'WorkItemDateCategory',
+  'WorkItemAuthorCategory', 'StarCategory', 'TicketCCEventCategory',
+].join(',');
+
+const ACTIVITY_FIELDS = [
+  'activities(author(login,fullName,avatarUrl,$type),timestamp,category(id),',
+  'field(presentation,customField(fieldType(valueType))),',
+  'added(login,fullName,avatarUrl,$type),removed(login,fullName,avatarUrl,$type))',
+].join('');
 
 const normalizeRole = (role: string) => role.replace(/ \((initial|past)\)$/, '');
 
@@ -29,86 +54,49 @@ const AppComponent: React.FunctionComponent = () => {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedRoles, setSelectedRoles] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    async function loadData() {
-      try {
-        const issueId = YTApp.entity?.id;
-        if (!issueId) {
-          setError('No issue context found');
-          setLoading(false);
-          return;
-        }
-
-        const issueFields = [
-          'id', 'idReadable', 'summary', 'reporter(login,fullName,avatarUrl)',
-          'updater(login,fullName,avatarUrl)', 'updated', 'created',
-          'fields(value(login,fullName,avatarUrl,$type),projectCustomField(field(name,fieldType(valueType))))'
-        ].join(',');
-
-        const categories = [
-          'AttachmentsCategory', 'AttachmentRenameCategory', 'AttachmentVisibilityCategory',
-          'AttachmentRecognizedTextCategory', 'CommentsCategory', 'ArticleCommentsCategory',
-          'CommentAttachmentsCategory', 'CommentTextCategory', 'CommentReactionCategory',
-          'CommentTemporarilyDeletedCategory', 'CommentVisibilityCategory', 'CustomFieldCategory',
-          'DefaultCategory', 'DescriptionCategory', 'IssueDeletedCategory', 'IssueRestoredCategory',
-          'IssueResolvedCategory', 'LinksCategory', 'ProjectCategory', 'PullRequestChangeCategory',
-          'SprintCategory', 'SummaryCategory', 'TagsCategory', 'TotalVotesCategory',
-          'UpsourceReviewCategory', 'VcsChangeCategory', 'VcsChangeStateCategory',
-          'IssueVisibilityCategory', 'VotersCategory', 'WorkItemCategory', 'WorkItemTypeCategory',
-          'WorkItemDescriptionCategory', 'WorkItemDurationCategory', 'WorkItemDateCategory',
-          'WorkItemAuthorCategory', 'StarCategory', 'TicketCCEventCategory'
-        ].join(',');
-
-        const [issueData, activitiesData] = await Promise.all([
-          host.fetchYouTrack(`issues/${issueId}?fields=${issueFields}`),
-          host.fetchYouTrack(`issues/${issueId}/activitiesPage?categories=${categories}&fields=activities(author(login,fullName,avatarUrl,$type),timestamp,category(id),field(presentation,customField(fieldType(valueType))),added(login,fullName,avatarUrl,$type),removed(login,fullName,avatarUrl,$type))`)
-        ]);
-
-        setIssue(extractResult(issueData));
-        const activitiesPage = extractResult(activitiesData) as ActivityPage;
-        setActivities(activitiesPage?.activities || []);
-      } catch (e: unknown) {
-        // eslint-disable-next-line no-console
-        console.error('Failed to load issue participants', e);
-        setError((e as any).message || 'Unknown error');
-      } finally {
-        setLoading(false);
-      }
+    const issueId = YTApp.entity?.id;
+    if (!issueId) {
+      setError('No issue context found');
+      setLoading(false);
+      return;
     }
 
-    loadData();
+    Promise.all([
+      host.fetchYouTrack<Issue>(`issues/${issueId}?fields=${ISSUE_FIELDS}`),
+      host.fetchYouTrack<ActivityPage>(
+        `issues/${issueId}/activitiesPage?categories=${ACTIVITY_CATEGORIES}&fields=${ACTIVITY_FIELDS}`
+      ),
+    ])
+      .then(([issueData, activitiesData]) => {
+        setIssue(issueData);
+        setActivities(activitiesData?.activities ?? []);
+      })
+      .catch((e: Error) => {
+        console.error('Failed to load issue participants', e);
+        setError(e.message || 'Unknown error');
+      })
+      .finally(() => setLoading(false));
   }, []);
-
 
   const participants = useMemo(() => {
     if (!issue) {
       return [];
     }
-    const collected = collectParticipants(issue, activities);
-    return getSortedParticipants(collected, issue.reporter?.login);
+    return getSortedParticipants(collectParticipants(issue, activities), issue.reporter?.login);
   }, [issue, activities]);
 
   const allRoles = useMemo(() => {
     const roles = new Set<string>();
-    participants.forEach(p => {
-      p.roles.forEach(role => roles.add(normalizeRole(role)));
-    });
+    for (const p of participants) {
+      for (const role of p.roles) {
+        roles.add(normalizeRole(role));
+      }
+    }
     return Array.from(roles).sort();
   }, [participants]);
-
-  const [selectedRoles, setSelectedRoles] = useState<Set<string>>(new Set());
-
-  const toggleRole = (role: string) => {
-    const normalized = normalizeRole(role);
-    const newSelected = new Set(selectedRoles);
-    if (newSelected.has(normalized)) {
-      newSelected.delete(normalized);
-    } else {
-      newSelected.add(normalized);
-    }
-    setSelectedRoles(newSelected);
-  };
 
   const filteredParticipants = useMemo(() => {
     if (selectedRoles.size === 0) {
@@ -119,10 +107,22 @@ const AppComponent: React.FunctionComponent = () => {
     );
   }, [participants, selectedRoles]);
 
+  const toggleRole = (role: string) => {
+    const normalized = normalizeRole(role);
+    setSelectedRoles(prev => {
+      const next = new Set(prev);
+      if (next.has(normalized)) {
+        next.delete(normalized);
+      } else {
+        next.add(normalized);
+      }
+      return next;
+    });
+  };
+
   if (loading) {
     return <LoaderInline/>;
   }
-
   if (error) {
     return <Text>{`Error: ${error}`}</Text>;
   }
@@ -170,41 +170,35 @@ const AppComponent: React.FunctionComponent = () => {
           </CollapseContent>
         </Collapse>
       )}
-      {filteredParticipants.map(p => {
-        const roles = formatRoles(p);
-        return (
-          <div key={p.login} className="participant">
-            <Avatar
-              url={p.avatarUrl}
-              username={p.login}
-              size={AvatarSize.Size20}
-            />
-            <div className="participantInfo">
-              <div className="participantNameRow">
-                <Link
-                  href={`/users/${p.login}`}
-                  className="participantName"
-                  title={p.fullName || p.login}
+
+      {filteredParticipants.map(p => (
+        <div key={p.login} className="participant">
+          <Avatar url={p.avatarUrl} username={p.login} size={AvatarSize.Size20}/>
+          <div className="participantInfo">
+            <div className="participantNameRow">
+              <Link
+                href={`/users/${p.login}`}
+                className="participantName"
+                title={p.fullName || p.login}
+              >
+                {p.fullName || p.login}
+              </Link>
+            </div>
+            <div className="participantRoles">
+              {[...p.roles].map(role => (
+                <Tag
+                  key={role}
+                  readOnly
+                  onClick={() => toggleRole(role)}
+                  tagType={selectedRoles.has(normalizeRole(role)) ? Tag.Type.MAIN : Tag.Type.DEFAULT}
                 >
-                  {p.fullName || p.login}
-                </Link>
-              </div>
-              <div className="participantRoles">
-                {roles.map(role => (
-                  <Tag
-                    key={role}
-                    readOnly
-                    onClick={() => toggleRole(role)}
-                    tagType={selectedRoles.has(normalizeRole(role)) ? Tag.Type.MAIN : Tag.Type.DEFAULT}
-                  >
-                    {role}
-                  </Tag>
-                ))}
-              </div>
+                  {role}
+                </Tag>
+              ))}
             </div>
           </div>
-        );
-      })}
+        </div>
+      ))}
     </div>
   );
 };
