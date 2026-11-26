@@ -59,6 +59,9 @@ export default tseslint.config(
       ],
       // Relaxed rules for better developer experience
       "react/jsx-no-literals": "off",
+      // The automatic JSX runtime (jsx: react-jsx) does not need React in scope
+      "react/react-in-jsx-scope": "off",
+      "react/jsx-uses-react": "off",
       "@typescript-eslint/no-explicit-any": "warn", // Downgrade from error to warning
       "@typescript-eslint/no-unused-vars": ["warn", { 
         "argsIgnorePattern": "^_",
@@ -84,7 +87,13 @@ export default tseslint.config(
     }
   },
   {
-    files: ["vite-plugin-*.ts", "vite.config*.ts"],
+    files: ["src/**/*.test.{ts,tsx}", "src/**/test-utils.ts"],
+    rules: {
+      "no-magic-numbers": "off",
+    }
+  },
+  {
+    files: ["vite.config*.ts", "vitest.config.ts"],
     rules: {
       "complexity": "off",
       "no-magic-numbers": "off",

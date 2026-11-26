@@ -79,6 +79,8 @@ export type HostAPI = PluginEndpointAPILayer;
 
 type YTAppInterface = {
   locale: string;
+  /** YouTrack base URL, including the context path, e.g. `https://example.youtrack.cloud`. */
+  baseUrl?: string;
   entity?: {
     id: string;
     type: "user" | "article" | "ticket" | "project" | "app";

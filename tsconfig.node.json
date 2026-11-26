@@ -21,6 +21,6 @@
   "include": [
     "vite.config.ts",
     "vite.config.backend.ts",
-    "vite-plugin-*.ts"
+    "vitest.config.ts"
   ]
 }

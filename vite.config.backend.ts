@@ -1,15 +1,15 @@
 import {defineConfig} from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
-import { youtrackApiGenerator, youtrackRouter, youtrackExtensionProperties, youtrackAppSettings, youtrackAutoUpload } from '@jetbrains/youtrack-enhanced-dx-tools';
+import { youtrackApiGenerator, youtrackRouter, youtrackExtensionProperties, youtrackAppSettings, youtrackAutoUpload } from '@jetbrains/youtrack-apps-tools/dx';
 
 
 export default defineConfig({
     optimizeDeps: {
-        exclude: ['@jetbrains/youtrack-enhanced-dx-tools']
+        exclude: ['@jetbrains/youtrack-apps-tools']
     },
     ssr: {
         noExternal: [],
-        external: ['@jetbrains/youtrack-enhanced-dx-tools']
+        external: ['@jetbrains/youtrack-apps-tools']
     },
     plugins: [
         tsconfigPaths(),
