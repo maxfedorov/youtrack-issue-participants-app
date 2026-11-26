@@ -1,26 +1,45 @@
-# YouTrack Issue Participants App
+# Issue and Article Participants for YouTrack
 
-This app provides a compact list of all users involved in a YouTrack issue. It helps to quickly identify the reporter, the last updater, current and past assignees, and other contributors who have interacted with the issue.
+Issue and Article Participants shows everyone involved in a YouTrack issue or knowledge base article and what each person did: who reported it, who is assigned now and who was assigned before, who commented, edited, attached files, logged time or was mentioned. It is for teams that want to know at a glance whom to ask about an issue or a page.
+
+The app adds two widgets that share the same code and look:
+
+| Widget | Where it appears | When it is hidden |
+|---|---|---|
+| **Issue Participants** | Issue sidebar, below the custom fields | Draft issues |
+| **Article Participants** | Article page, above the activity stream | Article drafts and while the article is being edited |
 
 ## Features
 
-- **Automated Participant Identification**: Automatically collects users from issue fields, activity stream, and comments.
-- **Role Detection**: Identifies specific roles based on current state and history:
-  - **Reporter**: The author of the issue.
-  - **Last Updater**: The user who made the most recent change.
-  - **Field-based Roles**: Users from custom fields (e.g., `assignee`, `reviewer`). Historical values are automatically marked as `(initial)` or `(past)`.
-  - **Activity-based Roles**: 
-    - `commenter`: users who left comments or reactions.
-    - `attachment manager`: users who managed attachments.
-    - `spent time author`: users who logged work.
-    - `vcs committer`: users associated with VCS changes or pull requests.
-    - `editor`: users who modified fields, tags, or issue state.
-    - `description editor` / `summary editor`: users who specifically edited the description or title.
-    - `voter`: users who voted for or starred the issue.
-- **Smart Sorting**: The reporter is always at the top, followed by the current assignee, then other participants sorted by their most recent activity.
-- **Collapsible Role Filters**: Filter participants by role with OR logic. Multiple filters can be selected and cleared with one click.
-- **Ring UI Integration**: Uses standard JetBrains Ring UI components (`Avatar`, `Tag`, `Link`, `Collapse`) for a native look and feel.
-- **Compact UI**: Optimized for the YouTrack sidebar (Issue Field Panel).
+- **Roles from current values and history.**
+  - Issues: `reporter`, `last updater`, every user-type field (`assignee`, `reviewers`, …), and former field values marked `(initial)` or `(past)`.
+  - Articles: `author`, `last updater`, `mentioned`.
+  - Activity roles: `commenter`, `inline commenter` (articles), `reacted`, `attachment manager`, `description editor` / `summary editor` (issues), `content editor` / `title editor` (articles), `spent time author`, `vcs committer`, `voter`, `editor`.
+- **Smart sorting.** The reporter or author comes first, then the current assignee, then everyone else by their most recent activity.
+- **Role filters.** Pick one or more roles to narrow the list; clear them with one click.
+- **The whole history.** The widgets page through the activity stream, so participants from long-running issues and articles are not lost.
+- **Respects permissions.** Everything is read through the YouTrack REST API as the current user. A comment restricted to a group, a private article or a project the user cannot read never reaches the widget, so nobody learns about participants they could not see in YouTrack itself.
+- **Native look.** Built with Ring UI; follows the light and dark YouTrack themes.
+
+## Permissions
+
+The app has no backend endpoints and stores nothing. Widget visibility:
+
+- Issue Participants requires **Read Issue**.
+- Article Participants requires **Read Article**.
+
+## Development
+
+```bash
+npm install
+npm run dev     # build, upload to YOUTRACK_HOST from .env, then watch with hot reload on :9000
+npm test        # unit tests
+npm run build   # lint, type check, tests, production build and manifest validation
+```
+
+`.env` needs `YOUTRACK_HOST` and `YOUTRACK_TOKEN`.
+
+Shared code lives in `src/widgets/shared/`: activity loading with pagination, role collection, sorting and the list UI. Each widget only defines how to load its entity and which activity categories map to which roles (`load-issue.ts`, `load-article.ts`).
 
 ## Installation
 

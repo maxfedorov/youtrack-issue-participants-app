@@ -1,8 +1,9 @@
 {
   "name": "issue-participants",
-  "title": "Issue Participants",
-  "description": "Displays a list of all issue participants, identifying their roles based on current state and activity.",
-  "version": "1.0.0",
+  "title": "Issue and Article Participants",
+  "description": "Shows everyone involved in a YouTrack issue or knowledge base article and what each person did: who reported it, who is assigned now and who was assigned before, who commented, edited, attached files, logged time or was mentioned. The Issue Participants widget sits in the issue sidebar, the Article Participants widget above the article activity stream. Filter the list by role. The app has no backend and reads data with the permissions of the current user, so nobody sees participants whose activity is hidden from them.",
+  "version": "2.0.0",
+  "changeNotes": "<h3>Version 2.0.0</h3>\n<ul>\n  <li><b>New:</b> Article Participants widget for knowledge base articles. It shows the author, editors, commenters, inline commenters, reactions, attachments and mentioned users. It is hidden in drafts and while the article is edited.</li>\n  <li><b>Rename:</b> the app is now called Issue and Article Participants.</li>\n  <li><b>Fix:</b> the whole activity history is loaded. Before, participants after the first 100 changes of an issue were missing.</li>\n  <li><b>Fix:</b> the initial values of multi-value user fields are detected correctly.</li>\n  <li><b>Fix:</b> profile links open in the YouTrack window.</li>\n  <li><b>Change:</b> the issue widget requires the Read Issue permission instead of Read User.</li>\n  <li><b>Improvement:</b> better accessibility of the role filters, React 19 and the current Ring UI.</li>\n</ul>",
   "$schema": "https://json.schemastore.org/youtrack-app.json",
   "vendor": {
     "name": "Maksim Fedorov",
@@ -24,6 +25,18 @@
       "expectedDimensions": {
         "height": 300
       }
+    },
+    {
+      "key": "article-participants",
+      "name": "Article Participants",
+      "indexPath": "article-participants/index.html",
+      "extensionPoint": "ARTICLE_ABOVE_ACTIVITY_STREAM",
+      "iconPath": "article-participants/widget-icon.svg",
+      "description": "Everyone involved in the article and their roles: author, editors, commenters, inline commenters, mentioned users.",
+      "guard": "({entity}) => !entity.draft && !entity.isEditing",
+      "permissions": [
+        "READ_ARTICLE"
+      ]
     }
   ]
 }
