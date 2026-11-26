@@ -16,10 +16,10 @@
       "indexPath": "issue-participants/index.html",
       "extensionPoint": "ISSUE_FIELD_PANEL_LAST",
       "iconPath": "issue-participants/widget-icon.svg",
-      "description": "View all participants and their roles based on current state and activity.",
+      "description": "Everyone involved in the issue and their roles, based on current field values and activity.",
       "guard": "({entity}) => !entity.draft",
       "permissions": [
-        "READ_USER"
+        "READ_ISSUE"
       ],
       "expectedDimensions": {
         "height": 300

@@ -20,6 +20,7 @@
   },
   "include": [
     "vite.config.ts",
-    "vite.config.backend.ts"
+    "vite.config.backend.ts",
+    "vitest.config.ts"
   ]
 }

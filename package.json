@@ -7,12 +7,11 @@
   "scripts": {
     "build:frontend": "vite build",
     "build:backend": "vite -c vite.config.backend.ts build",
-    "build": "npm run clean && npm run build:backend && npm run lint && npm run build:frontend && youtrack-app app validate",
+    "build": "npm run clean && npm run build:backend && npm run lint && npm run typecheck && npm run test && npm run build:frontend && youtrack-app app validate",
     "build:nolint": "npm run clean && npm run build:backend && npm run build:frontend && youtrack-app app validate",
     "clean": "rm -f src/api/api.d.ts src/api/api.zod.ts",
     "preview": "vite preview",
     "lint": "eslint --report-unused-disable-directives --max-warnings 0",
-    "test": "echo 'no tests'",
     "pack": "rm -rf issue-participants.zip && npx --yes bestzip issue-participants.zip dist/*",
     "upload": "youtrack-app app upload",
     "upload-local": "set -a && source .env && set +a && youtrack-app app upload --host $YOUTRACK_HOST --token $YOUTRACK_TOKEN",
@@ -29,7 +28,9 @@
     "dev:upload": "npm run dev:build && npm run upload-local",
     "generate": "npx @jetbrains/create-youtrack-app",
     "g": "npm run generate --",
-    "lint:fix": "eslint --fix"
+    "lint:fix": "eslint --fix",
+    "typecheck": "tsc -p tsconfig.widgets.json --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@jetbrains/icons": "^5.25.0",
@@ -46,6 +47,8 @@
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.39.0",
     "@jetbrains/eslint-config": "^6.0.5",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
     "@types/node": "^24.10.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
@@ -56,10 +59,12 @@
     "eslint-plugin-react-hooks": "^7.0.0",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "jsdom": "^27.4.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.74.0",
     "vite": "^6.4.1",
     "vite-plugin-static-copy": "^3.4.0",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.1.12"
   }
 }

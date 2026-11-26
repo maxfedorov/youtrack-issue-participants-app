@@ -87,7 +87,13 @@ export default tseslint.config(
     }
   },
   {
-    files: ["vite.config*.ts"],
+    files: ["src/**/*.test.{ts,tsx}", "src/**/test-utils.ts"],
+    rules: {
+      "no-magic-numbers": "off",
+    }
+  },
+  {
+    files: ["vite.config*.ts", "vitest.config.ts"],
     rules: {
       "complexity": "off",
       "no-magic-numbers": "off",
