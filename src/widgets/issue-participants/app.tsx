@@ -52,15 +52,13 @@ const normalizeRole = (role: string) => role.replace(/ \((initial|past)\)$/, '')
 const AppComponent: React.FunctionComponent = () => {
   const [issue, setIssue] = useState<Issue | null>(null);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const issueId = YTApp.entity?.id;
+  const [loading, setLoading] = useState(!!issueId);
+  const [error, setError] = useState<string | null>(issueId ? null : 'No issue context found');
   const [selectedRoles, setSelectedRoles] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    const issueId = YTApp.entity?.id;
     if (!issueId) {
-      setError('No issue context found');
-      setLoading(false);
       return;
     }
 
@@ -79,7 +77,7 @@ const AppComponent: React.FunctionComponent = () => {
         setError(e.message || 'Unknown error');
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [issueId]);
 
   const participants = useMemo(() => {
     if (!issue) {

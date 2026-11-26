@@ -1,1 +1,1 @@
-export * from '@jetbrains/youtrack-enhanced-dx-tools/youtrack-types';
+export * from '@jetbrains/youtrack-workflow-types/workflowTypeScriptStubs';
